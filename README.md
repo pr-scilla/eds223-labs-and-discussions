@@ -23,10 +23,10 @@ Below is a map of the contents of this repository.
 
 ## Contributors
 
-The projects housed in this repository were completed by me, [Priscilla Pierce] (https://github.com/pr-scilla).
+The projects housed in this repository were completed by me, [Priscilla Pierce](https://github.com/pr-scilla).
 
 ## References and Acknowledgements
 
-[EDS 223 Course Website] (https://eds-223-geospatial.github.io/)
+[EDS 223 Course Website](https://eds-223-geospatial.github.io/)
 
 List of references and links to data sources, sources of information
