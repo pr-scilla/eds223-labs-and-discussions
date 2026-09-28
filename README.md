@@ -8,11 +8,11 @@ Below is a map of the contents of this repository.
 
 ```
 .
-├── discussions/                      # weekly discussion materials
-│   └──             
+├── data/                      # data files used in discussions and lab assignments
+├── discussions/                      # weekly discussion materials organized by week
+│   └──  week_0_data_wrangling           
 ├── labs/                             # weekly lab materials
-|   └──                               
-|   └──                       
+|   └──                                                    
 ├── .gitignore
 ├── README.md        
 
