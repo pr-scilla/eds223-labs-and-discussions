@@ -8,9 +8,10 @@ Below is a map of the contents of this repository.
 
 ```
 .
-├── data/                      # data files used in discussions and lab assignments
+├── data/                             # data files used in discussions and lab assignments
 ├── discussions/                      # weekly discussion materials organized by week
-│   └──  week_0_data_wrangling           
+│   └──  week_0_data_wrangling/ 
+│   └──  week_1_tmap_maps_and_beyond/           
 ├── labs/                             # weekly lab materials
 |   └──                                                    
 ├── .gitignore
