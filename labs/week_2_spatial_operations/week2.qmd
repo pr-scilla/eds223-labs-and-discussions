@@ -1,0 +1,341 @@
+---
+title: "Week 2 Lab"
+subtitle: "Intro to vector data with `sf` and coordinate reference systems"
+author: "Your Name"
+date: last-modified
+format:
+  html:
+    toc: true
+editor_options: 
+  chunk_output_type: console
+---
+
+::: {.callout-note icon="true"}
+# Source Materials
+
+The following materials are modified from [Chapter 3 of Geocomputation with R](https://geocompr.robinlovelace.net/attr.html) and the [tmap book](https://r-tmap.github.io/tmap-book/).
+:::
+
+In this lab, we'll explore the basics of manipulating vector data in R using the `sf` package.
+
+## 1. Set up
+
+Install a new package to take advantage of some preloaded data.
+
+```{r}
+#| eval: false
+install.packages("spData")
+```
+
+Let's load all necessary packages:
+
+```{r}
+#| message: false
+#| warning: false
+rm(list = ls())
+library(sf) # for handling vector data
+library(tmap) # for making maps
+library(tidyverse) # because we love the tidyverse
+library(spData) # preloaded spatial data
+```
+
+## 2. Simple features in `sf`
+
+Simple features is a hierarchical data model that represents a wide range of geometry types. The `sf` package can represent all common vector geometry types:
+
+-   points
+-   lines
+-   polygons
+-   and their respective 'multi' versions
+
+`sf`provides the same functionality that the `sp`, `rgdal`, and `rgeos` packages provided, but is more intuitive because it builds on the tidy data model and works well with the `tidyverse`. `sf` represents spatial objects as "simple feature" objects by storing them as a data frame with the geographic data stored in a special column (usually named `geom` or `geometry`).
+
+### Simple features from scratch
+
+Let's start by looking at how we can construct a `sf` object. Typically we will load `sf` objects by reading in data. However, it can be helpful to see how `sf` objects are created from scratch.
+
+First, we create a geometry for London by supplying a point and coordinate reference system.
+
+```{r}
+
+
+```
+
+Then, we supply some non-geographic attributes by creating a data frame with attributes about London.
+
+```{r}
+
+```
+
+And we attach the simple feature collection and data frame to create a `sf` object. Check out the class of the new object we created.
+
+```{r}
+
+
+```
+
+We can also check out what the CRS looks like:
+
+```{r}
+
+```
+
+### Existing `sf` object
+
+Now let's look at an existing `sf` object representing countries of the world:
+
+```{r}
+
+```
+
+We can see that this object contains both spatial data (`geom` column) and attributes about those geometries. We can perform operations on the attribute data, just like we would with a normal data frame.
+
+```{r}
+```
+
+The geometry column is "sticky", meaning it will stick around unless we explicitly get rid of it. For example, `dplyr`'s `select()` function won't get rid of it.
+
+```{r}
+
+```
+
+To drop the `geom` column and convert this `sf` object into a data frame, we need to drop the geometry column using the `st_drop_geometry()`.
+
+```{r include=TRUE}
+
+```
+
+::: {.callout-tip icon="true"}
+# `sf` syntax
+
+Note that all functions in the `sf` package start with the prefix `st_` NOT `sf_`. Why? `st_` stands for "spatiotemporal" as in data that varies in space and time.
+:::
+
+## 3. Coordinate reference systems and projections
+
+R handles coordinate reference systems using multiple formats:
+
+-   an identifying string specifying the authority and code such as `EPSG:4325`
+    -   these need to be passed as strings
+    -   `sf` will accept the four digit code as an integer
+-   `proj4strings` are now outdated, but you might see them around
+    -   for example, `+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs`
+
+### Reprojecting data
+
+In some cases we will be working with data which is represented with different coordinate reference systems (CRS). Whenever we work with multiple spatial data objects, we need to check that the CRSs match.
+
+Let's create another `sf` object for London, but now represented with a project coordinate system.
+
+```{r}
+
+```
+
+We can check the CRS of any data using the `st_crs()` function.
+
+```{r}
+```
+
+This is a lot of information to read, so if we wanted to use this point with our other London point, we need to check to see if they are using the same CRS.
+
+```{r}
+```
+
+To transform the CRS of a dataset, we use the `st_transform()` function. In the `crs` argument, we need to specify the coordinate reference system. We can do this by either supplying a CRS code or specifying the CRS of another dataset using the `st_crs()` function.
+
+```{r}
+```
+
+Now if we check, the CRS between the two datasets should match
+
+```{r}
+
+```
+
+::: {.callout-tip icon="true"}
+# Building beautiful workflows
+
+Hopefully we're already thinking about how we could build checking coordinate reference systems into our workflows.
+
+For example, we could add code like the following that transforms the CRS of `dataset2` to match `dataset1` and prints out a warning message.
+
+```{r}
+if(st_crs(dataset1) != st_crs(dataset2)){
+  warning("coordinate refrence systems do not match")
+  dataset2 <- st_transform(dataset1, crs = st_crs(dataset1))
+}
+```
+:::
+
+### Changing map projections
+
+Remember that whenever we make a map we are trying to display three dimensional data with only two dimensions. To display 3D data in 2D, we use projections. Which projection you use can have big implications for how you display information.
+
+To the projection of our data, we could:
+
+-   reproject the underlying data
+-   or in `tmap` we can specify the projection we want the map to use
+
+Let's compare global maps using two different projections:
+
+-   Equal Earth is an equal-area pseudocylindrical projection (EPSG 8857)
+-   Mercator is a conformal cylindrical map that preserves angles (EPSG 3395)
+
+```{r}
+
+```
+
+## 4. Vector attribute subsetting
+
+Often we'll want to manipulate `sf` objects in the same ways as we might with tabular data in data frames. The great thing about the simple features data model, is we can largely treat spatial objects the same as data frames.
+
+### `dplyr` functions!
+
+This means that we can use all of our favorite `dplyr` functions on `sf` objects -- yay!
+
+We can select columns...
+
+```{r}
+
+```
+
+Or remove columns...
+
+```{r}
+
+```
+
+Or select AND rename columns
+
+```{r}
+
+```
+
+Or filter observations based on variables
+
+```{r}
+
+
+```
+
+### Chaining commands with pipes
+
+Because we can use `dplyr` functions with `sf` objects, we can chain together commands using the pipe operator.
+
+Let's try to find the country in Asia with the highest life expectancy
+
+```{r}
+
+```
+
+### Vector attribute aggregation
+
+Aggregation is the process of summarizing data with one or more 'grouping' variables. For example, using the `world` dataframe which provides information on countries of the world, we might want to aggregate to the level of continents. It is important to note that aggregating data *attributes* is a different process from aggregating *geographic* data, which we will cover later.
+
+Let's try to find the total population within each continent:
+
+```{r}
+
+```
+
+Let's also find the total area and number of countries in each continent:
+
+```{r}
+
+```
+
+Building on this, let's find the population density of each continent, find the continents with highest density and arrange by the number of countries. We'll drop the geometry column to speed things up.
+
+```{r}
+
+```
+
+## 5. Joins with vector attributes
+
+A critical part of many data science workflows is combining data sets based on common attributes. In R, we do this using multiple join functions, which follow SQL conventions.
+
+Let's start by looking a data set on national coffee production from the `spData` package:
+
+```{r}
+
+```
+
+It appears that `coffee_data` contains information on the amount of coffee produced in 2016 and 2017 from a subset of countries.
+
+```{r}
+
+```
+
+The coffee production dataset does not include any spatial information, so If we wanted to make a map of coffee production, we would need to combine `coffee_data` with the `world` dataset. We do this by joining based on countries' names.
+
+```{r}
+
+```
+
+And plot what this looks like...
+
+```{r}
+
+
+```
+
+By using a left join, our previous result added the coffee production information onto all countries of the world. If we just wanted to keep countries that do have coffee data, we could use an inner join:
+
+```{r}
+
+```
+
+Let's build ourselves a warning message to make sure we don't lose any data because of incomplete matches.
+
+```{r}
+
+
+```
+
+It looks like we lost some countries with coffee data, so let's figure out what's going on. We can find rows that didn't match using the `setdiff()` function.
+
+```{r}
+
+```
+
+We see that one of the issues is that the two data sets use different naming conventions for the Democratic Republic of the Congo. We can use a string matching function to figure out what the DRC is called in the world data set.
+
+```{r}
+
+
+```
+
+Now we can update the coffee data set with the matching name for the DRC:
+
+```{r include=TRUE}
+
+```
+
+And we can try the inner join again and hopefully the DRC now matches:
+
+```{r}
+
+
+# update warning message conditional to include the mismatch for "others"
+if (nrow(world_coffee_inner) != nrow(coffee_data) & setdiff(coffee_data$name_long, world_coffee_inner$name_long) != "Others") {
+  warning("inner join does not match original data. potential data loss during join")
+}
+```
+
+Let's visualize what a the inner join did to our spatial object.
+
+```{r}
+
+
+```
+
+::: {.callout-note icon="true"}
+# Critical thinking question
+
+What happens if we left join a `sf` object onto a data frame?
+
+```{r include=TRUE}
+
+```
+
+:::
