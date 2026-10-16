@@ -1,0 +1,68 @@
+# Week 3: Practice vector operations
+
+## Load packages and download data
+
+```{r}
+# Load packages
+library(here)
+library(tidyverse)
+library(sf)
+library(tmap)
+```
+
+```{r}
+sb_protected_areas <- st_read(here("data", "week3", "cpad_super_units_sb.shp")) |>  
+  st_transform("ESRI:102009") # matching cooridnate systems for all loaded data
+
+sb_city_boundaries <- st_read(here("data", "week3", "sb_city_boundaries_2003.shp")) |> 
+  st_transform("ESRI:102009") # matching cooridnate systems for all loaded data
+
+sb_county_boundary <- st_read(here("data", "week3", "sb_county_boundary_2020.shp")) |> 
+  st_transform("ESRI:102009") # matching cooridnate systems for all loaded data
+
+aves <- st_read(here("data", "week3", "aves_observations_2020_2024.shp")) |> 
+  st_transform("ESRI:102009") # matching cooridnate systems for all loaded data
+```
+
+## Find bird observations within PAs in Santa Barbara County
+
+Find how many bird observations are within protected areas in Santa Barbara County and show how your output differs with a spatial subset versus a spatial join
+
+```{r}
+
+```
+
+Make a 5 km buffer around the protected areas and subset buffered geometries to only those with bird observations
+
+```{r}
+
+```
+
+## Find PAs within 15km of Goleta
+
+Find the protected areas within 15 km of a city in Santa Barbara County
+Hint: Use dplyr::filter() to select a city from sb_city_boundaries
+
+```{r}
+
+```
+
+Explore different outputs for #3 with st_intersects(), st_intersection(), and st_within()
+
+```{r}
+
+```
+
+Practice a distance-based join with st_is_within_distance()
+
+```{r}
+
+```
+
+## Find distance between Goleta and Dangermond Preserve
+
+Find the distance between your city of choice and a protected area of your choice, using the geometries’ edges and the centroid
+
+```{r}
+
+```
