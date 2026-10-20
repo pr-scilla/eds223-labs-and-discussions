@@ -91,24 +91,29 @@ As an example, we'll load a dataset from `spDataLarge` containing the four bands
 ```{r}
 landsat <- rast(system.file("raster/landsat.tif", package = "spDataLarge"))
 
+nlyr(landsat) # check number of layers
 ```
 
 ```{r}
-
-
-
+tm_shape(landsat) +
+  tm_raster(col.legend = tm_legend("Unscaled Reflectance"),
+            col.free = FALSE # forces four different plots to all use the same legend
+            ) 
 ```
 
 We can subset layers using either the layer number or name:
 
 ```{r}
+names(landsat) # find out names of layers
 
+landsat3 <- subset(landsat, 3) # pulling out third layer from landsat object
+landsat4 <- subset(landsat, "landsat_4") # pulling out landsat_4 by name
 ```
 
 We can combine `SpatRaster` objects into one, using `c()`:
 
 ```{r}
-
+landsat34 <- c(landsat3, landsat4)
 ```
 
 ### Merging Rasters
@@ -121,6 +126,11 @@ In this example, we download elevation data for Austria and Switzerland and merg
 austria <- geodata::elevation_30s(country = "AUT", path = tempdir())
 switzerland <- geodata::elevation_30s(country = "CHE", path = tempdir())
 
+# Check that CRS match
+same.crs(austria, switzerland)
+
+# Merge austria and switzerland rasters
+merged <- merge(austria, switzerland)
 
 ```
 
@@ -151,20 +161,19 @@ tmap_arrange(map1, map2, map3, nrow = 1)
 We can get info on raster values just by typing the name or using the summary function.
 
 ```{r}
-
+summary(zion_elevation, size = ncell()) # summary quartiles of elevation. Defaults to using a sample, if you specify ncell() to force it to use all cells
 ```
 
 We can get global summaries, such as standard deviation.
 
 ```{r}
-
+global(zion_elevation, sd) # standard deviation of elevation
 ```
 
 Or we can use `freq()` to get the counts with categories.
 
 ```{r}
-
-
+freq(zion_land) # count of number of cells within each category
 ```
 
 ### Indexing
@@ -172,34 +181,53 @@ Or we can use `freq()` to get the counts with categories.
 We can index rasters using row-column indexing or cell IDs. 
 
 ```{r}
+# Find out value of row 1 and column 1
+zion_elevation[1, 1] # gives value in the very top left cell
 
+# Cell ID number 1 (cells move from left to right and from top to bottom)
+zion_elevation[1]
 
+# Test example below
+zion_elevation[468]
+
+zion_elevation[2,3]
 ```
 
 For multi-layer rasters, subsetting returns the values in both layers.
 
 ```{r}
-
+landsat[1]
 ```
 
 We can also modify/overwrite cell values.
 
 ```{r}
+zion_elevation[1,1] <- 0
 
+zion_elevation[1,1]
 
 ```
 
 Replacing values in multi-layer rasters requires a matrix with as many columns as layers and rows as replaceable cells.
 ```{r}
-
+landsat[1] <- cbind(c(0), c(0), c(0), c(0)) # need to overwrite each layer
+landsat[1]
 
 ```
 
 We can also use a similar approach to replace values that we suspect are incorrect.
 
 ```{r}
+test_raster <- zion_elevation
 
+# Check NA values
+global(is.na(test_raster), "sum")
 
+# Assign elevation of less than 20 to NA
+test_raster[test_raster < 20] <- NA
+
+# Check NA values
+global(is.na(test_raster), "sum")
 ```
 
 ## 3. Spatial subsetting
