@@ -670,11 +670,29 @@ Sometimes the geographic centroid may fall outside of the boundaries of the obje
 Let's inspect a few examples!
 
 ```{r}
+nz_centroid <- st_centroid(nz)
+seine_centroid <- st_centroid(seine)
 
+nz_pos <- st_point_on_surface(nz)
+seine_pos <- st_point_on_surface(seine)
 ```
 
 ```{r}
+map1 <- tm_shape(nz) +
+  tm_polygons() +
+  tm_shape(nz_centroid) +
+  tm_symbols(fill = "red", fill_alpha = 0.5) +
+  tm_shape(nz_pos) +
+  tm_symbols(fill = "blue", fill_alpha = 0.5)
 
+map2 <- tm_shape(seine) +
+  tm_lines() +
+  tm_shape(seine_centroid) +
+  tm_symbols(fill = "red", fill_alpha = 0.5) +
+  tm_shape(seine_pos) +
+  tm_symbols(fill = "blue", fill_alpha = 0.5)
+
+tmap_arrange(map1, map2, nrow = 1)
 ```
 
 ### Simplification
@@ -682,11 +700,21 @@ We may also want to simplify a `geometry` to make it easier to plot or take up l
 
 Let's see an example!
 ```{r}
-
+seine_simple <- st_simplify(seine, dTolerance = 2000) # how far of a threshold from the line do you want there to be for the simplification  
 ```
 
 ```{r}
+# Plot original and simplified side by side
 
+map1 <- tm_shape(seine) +
+  tm_lines() +
+  tm_title("original")
+
+map2 <- tm_shape(seine_simple) +
+  tm_lines() +
+  tm_title("st_simplify()")
+
+tmap_arrange(map1, map2, nrow = 1)
 ```
 
 # Summary of new functions
