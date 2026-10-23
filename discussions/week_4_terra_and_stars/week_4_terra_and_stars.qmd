@@ -1,0 +1,11 @@
+# Week 4: Discussion Section (terra and stars)
+## Practice raster manipulations
+
+Load packages
+```{r}
+library(tidyverse)
+library(spDataLarge)
+library(sf)
+library(stars)
+library(terra)
+```
