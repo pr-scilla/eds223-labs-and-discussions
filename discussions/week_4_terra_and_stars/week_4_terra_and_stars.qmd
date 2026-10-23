@@ -1,5 +1,6 @@
 # Week 4: Discussion Section (terra and stars)
 ## Practice raster manipulations
+[Link to discussion](https://eds-223-geospatial.github.io/course-materials/discussions/week4-v2-discussion.html)
 
 Load packages
 ```{r}
@@ -9,3 +10,215 @@ library(sf)
 library(stars)
 library(terra)
 ```
+
+### Exercises
+1. **Explore elevation at Mt. Mongón, Perú**
+
+    - Make a boxplot and histogram of elevation at Mt. Mongón, Perú
+    - Reclassify dem and compute the mean for the three classes:
+    - Low, where elevation is less than 300
+    - Medium
+    - High, where elevation is greater than 500
+
+2. **Explore NDVI and NDWI at Zion National Park**
+
+    - Calculate the Normalized Difference Vegetation Index (NDVI) at Zion National Park
+    - Calculate the Normalized Difference Water Index (NDWI) at Zion National Park
+    - Find a correlation between NDVI and NDWI at Zion National Park
+3. **Change resolution of elevation at Zion National Park**
+    - Use all the methods available to change the resolution of elevation at Zion National Park to 0.01 by 0.01 degrees
+**Note:** The srtm raster has a resolution of 0.00083 by 0.00083 degrees
+Landsat 8 bands 2-5 correspond to bands 1-4 for this raster. Bands are as follows:
+
+ Band	  Color
+1	blue	30 meter
+2	green	30 meter
+3	red	30 meter
+4	near-infrared	30 meter
+
+## Part 1: `terra`
+
+1. Load data
+```{r}
+dem <- terra::rast(system.file("raster/dem.tif", package = "spDataLarge"))
+landsat <- terra::rast(system.file("raster/landsat.tif", package = "spDataLarge"))
+srtm <- terra::rast(system.file("raster/srtm.tif", package = "spDataLarge"))
+```
+
+2. Explore elevation at Mt. Mongón, Perú
+```{r}
+# terra has its own hist() and boxplot() that reacd the cell values for you. Plain hist() fails with "x must be numeric" if terra isnt loaded
+
+terra::hist(dem, 
+            main = 'Digital Elevation Model Distribution',
+            xlab = 'Value')
+
+terra::boxplot(dem, 
+              main = 'Digital Elevation Model Distribution',
+              xlab = 'Value')
+```
+
+```{r}
+# Reclassify elevation into 3 classes
+rcl <- matrix(c( -Inf, 300, 0, # each row is one rule: from, to, new value
+                  300, 500, 1,
+                  500, Inf, 2),
+                ncol = 3, byrow = TRUE) # by row fills the matrix row by row, so each liune of code reads as one rule
+
+dem_rcl <- terra::classify(dem, rcl = rcl) # classify replaces every cell with 0, 1, or 2 based on those rules
+
+levels(dem_rcl) <- data.frame(id = 0:2,
+                              cats = c("low", "medium", "high")) # Create dataframe of level names based on levels classified earlier (0 is low, 1 is medium, 2 is high)
+
+# Calculate mean elevation for each category using original DEM values
+elevation_mean <- terra::zonal(dem, dem_rcl, fun = "mean")
+elevation_mean
+```
+
+```{r}
+# Plot dem_rcl
+plot(dem_rcl)
+```
+
+3. Explore NDVI and NDWI at Zion National Park
+
+```{r}
+scale_factor <- 0.0000275
+offset <- 0.2
+
+scale_function <- function(x) {
+  x * scale_factor + offset
+}
+
+landsat_scaled <- terra::app(landsat, fun = scale_function)
+```
+
+```{r}
+ndwi_fun <- function(green, nir){
+    (green - nir)/(green + nir)
+}
+
+ndvi_fun <- function(nir, red){
+  (nir - red)/(nir + red)
+}
+```
+
+```{r}
+ndwi_rast <- terra::lapp(landsat_scaled[[c(2, 4)]],
+                         fun = ndwi_fun)
+
+ndvi_rast <- terra::lapp(landsat_scaled[[c(4, 3)]],
+                         fun = ndvi_fun)
+
+plot(ndwi_rast,
+     main = "Zion National Park NDWI")
+```
+
+```{r}
+library(terra)
+
+combine <- c(ndvi_rast, ndwi_rast) # Stack rasters
+
+plot(combine, main = c("NDVI", "NDWI")) # Plot
+```
+
+```{r}
+# Calculate correlation between raster layers
+terra::layerCor(combine, fun = cor)
+```
+
+4. Change resolution of elevation at Zion National Park
+```{r}
+plot(srtm)
+```
+
+```{r}
+rast_template <- terra::rast(terra::ext(srtm), res = 0.01) # Create empty template
+```
+
+```{r}
+srtm_resampl1 <- terra::resample(srtm, y = rast_template, method = "bilinear")
+srtm_resampl2 <- terra::resample(srtm, y = rast_template, method = "near")
+srtm_resampl3 <- terra::resample(srtm, y = rast_template, method = "cubic")
+srtm_resampl4 <- terra::resample(srtm, y = rast_template, method = "cubicspline")
+srtm_resampl5 <- terra::resample(srtm, y = rast_template, method = "lanczos")
+```
+
+```{r}
+srtm_resampl_all <- c(srtm_resampl1, srtm_resampl2, srtm_resampl3, srtm_resampl4, srtm_resampl5)
+labs <- c("Bilinear", "Near", "Cubic", "Cubic Spline", "Lanczos")
+
+plot(srtm_resampl_all, main = labs)
+```
+
+## Part 2: `sf` and `stars`
+
+Load in data:
+```{r}
+# Load in data using stars
+dem <- stars::read_stars(system.file("raster/dem.tif", package = "spDataLarge"))
+landsat <- stars::read_stars(system.file("raster/landsat.tif", package = "spDataLarge"))
+srtm <- stars::read_stars(system.file("raster/srtm.tif", package = "spDataLarge"))
+```
+
+
+```{r}
+class(srtm)   # should be "stars" in Part 2
+```
+
+```{r}
+# A stars object is a list of arrays (attributes) plus a set of dimensions
+dem
+```
+
+```{r}
+landsat # Note the third dimension, "band"
+```
+
+2. Explore elevation at Mt. Mongón, Perú
+
+```{r}
+dem_values <- as.vector(dem[[1]])
+
+hist(dem_values,
+     main = "Digital Elevation Model Distribution",
+     xlab = "Values")
+```
+
+```{r}
+boxplot(dem_values,
+        main = "Digital Elevation Model Distribution",
+        ylab = "Values")
+```
+
+
+```{r}
+# Reclassify by cutting values into intervals, returning a factor raster
+dem_rcl <- cut(dem,
+               breaks = c(-Inf, 300, 500, Inf), # -Inf to 300, 300 to 500, 500 to Inf
+               labels = c("low", "medium", "high"))
+
+plot(dem_rcl, main = "Reclassified elevation")
+```
+
+```{r}
+# Calculate mean elevation for each category using original DEM values
+elevation_mean <- tibble(elevation = as.vector(dem[[1]]),
+                         cats = factor(as.vector(dem_rcl[[1]]), levels = levels(dem_rcl[[1]]))) |> 
+  group_by(cats) |> 
+  summarise(mean_elevation = mean(elevation, na.rm = TRUE))
+elevation_mean
+```
+
+```{r}
+# Polygonize the reclassified raster, merging cells of the same class
+dem_polys <- sf::st_as_sf(dem_rcl, merge = TRUE) |> 
+  group_by(dem.tif) |> 
+  summarise() # Dissolve into one (multi)polygon per class
+
+# Compute the mean of DEM values falling inside each polygon
+aggregate(dem, by = dem_polys, FUN = mean) |> 
+  sf::st_as_sf() |> 
+  mutate(cats = dem_polys$dem.tif)
+```
+
