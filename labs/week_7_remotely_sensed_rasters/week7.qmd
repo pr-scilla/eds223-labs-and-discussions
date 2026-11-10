@@ -212,14 +212,16 @@ Each band responds to a different portion of the electromagnetic spectrum. Befor
 #| message: false
 #| fig-height: 6
 
-plot(landsat, col = gray.colors(256))                                                                                 
+plot(landsat, col = gray.colors(256)) # R's digital display has 256 bit display, so need to set to 256. Default is viridis                                                                               
 ```
 
 ::: {.callout-warning icon="true"}
 # Explore the bands
 
 - In which bands does water appear darkest? Why?
+    Water appears darkest in SWIR2. Water doesn't reflect much infrared, it highly absorbs it. So water appears darker.
 - In which band does vegetation appear brightest? Why?
+    NIR shows vegetation the brightest. Vegetation highly reflects NIR. 
 :::
 
 ## 4. Reflectance scaling
@@ -230,7 +232,7 @@ $$\text{Reflectance} = \text{integer} \times \text{scale factor} + \text{additiv
 
 ```{r}
 landsat_scaled <- (landsat * scale_factor) + add_offset
-landsat_scaled <- clamp(landsat_scaled, lower = 0, upper = 1)
+landsat_scaled <- clamp(landsat_scaled, lower = 0, upper = 1) # clamp is excluding values that are outside of the range of 0 to 1
 
 # verify: values should now be approximately 0–1
 minmax(landsat_scaled)
