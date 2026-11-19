@@ -209,7 +209,7 @@ We will load the shapefile identifying locations within our study area as contai
 
 ```{r}
 # read in and transform training data
-training_data <- st_read(here::here( "data", "trainingdata.shp")) %>%
+training_data <- st_read(here::here( "data", "week8", "trainingdata.shp")) %>%
   st_transform(., crs = crs(landsat))
 ```
 
@@ -363,7 +363,7 @@ The first step is to prepare our data for k-means clustering. Unlike the decisio
 ```{r}
 
 # Convert raster to dataframe
-landsat_df <- as.data.frame(landsat, xy = TRUE, na.rm = TRUE)
+landsat_df <- as.data.frame(landsat, xy = TRUE, na.rm = TRUE) # xy=TRUE makes x and y into their own columns
 
 # Extract spectral bands for clustering
 spectral_data <- landsat_df[, c("blue", "green", "red", "NIR", "SWIR1", "SWIR2")]
@@ -381,7 +381,7 @@ Unlike the decision tree, **k-means has no idea what "water" or "green vegetatio
 
 
 ```{r}
-# Set seed for reproducibility
+# Set seed for reproducibility in class
 set.seed(223)
 
 # Perform k-means with k=4
@@ -398,10 +398,10 @@ The k-means algorithm has now assigned each pixel to one of 4 clusters (numbered
 
 ```{r}
 # Convert back to raster
-SB_classification_kmeans <- rast(landsat[[1]])
-values(SB_classification_kmeans) <- NA
-cells <- cellFromXY(SB_classification_kmeans, landsat_df[, c("x", "y")])
-values(SB_classification_kmeans)[cells] <- landsat_df$cluster
+SB_classification_kmeans <- rast(landsat[[1]]) # duplicate layer of landsat
+values(SB_classification_kmeans) <- NA # assign all values to be NA (using as a template for below)
+cells <- cellFromXY(SB_classification_kmeans, landsat_df[, c("x", "y")]) # Take x y coordinates in landsat_df and convert to cell numbers
+values(SB_classification_kmeans)[cells] <- landsat_df$cluster # assign cluster values to cells in raster
 
 
 ```
