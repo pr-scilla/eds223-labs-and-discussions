@@ -256,6 +256,28 @@ tm_shape(landsat_scaled) +
   tm_scalebar(position = c("left", "bottom"))
 ```
 
+Let's stretch our true color image:
+```{r}
+plotRGB(landsat_scaled, r = 3, g = 2, b = 1, stretch = "lin") # Specify which layers are associated with red, green, and blue bands. "lin" is linear stretch type.
+```
+
+**Gamma correction** applies a power transform to each pixel value. Because surface reflectance values are all between 0 and 1, raising them to a power less than 1 pushes mid-range values upward without clipping, brightening the midtones while preserving relative differences across the scene.
+
+A gamma of 0.4–0.5 works well for Landsat over most landscapes.
+
+```{r}
+landsat_gamma <- landsat_scaled[[c("red", "green", "blue")]]^0.4
+# min values should not be less than zero and max should not exceed 1.
+```
+
+```{r}
+tm_shape(landsat_gamma) +
+  tm_rgb(col = tm_vars(c("red", "green", "blue"), multivariate = TRUE),
+          col.scale = tm_scale_rgb(max_color_value = 1)) +
+  tm_title("True Color (Gamma = 0.4)") +
+  tm_scalebar(position = c("left", "bottom"))
+```
+
 ## 6. False color imagery
 
 A **false color composite** assigns satellite bands beyond the visible spectrum (or in a non-standard order) to the display channels, letting us highlight features that are difficult to distinguish in true color.
@@ -271,6 +293,7 @@ Placing the **near infrared band** in the red channel makes healthy vegetation a
 | Blue | Band 3 (Green) | Water reflects slightly in green → appears blue |
 
 ```{r}
+# These color assignments help us assess vegetation extent and health
 tm_shape(landsat_scaled) +
   tm_rgb(col = tm_vars(c("NIR", "red", "green"), multivariate = TRUE),
          col.scale = tm_scale_rgb(max_color_value = 1)) +
@@ -289,6 +312,7 @@ Placing the **shortwave infrared band** in the red channel highlights moisture. 
 | Blue | Band 3 (Green) | Water absorbs all three → very dark |
 
 ```{r}
+# These color assignments highlight moisture. Dry and burned surfaces will appear bright red.
 tm_shape(landsat_scaled) +
   tm_rgb(col = tm_vars(c("SWIR1", "NIR", "green"), multivariate = TRUE),
          col.scale = tm_scale_rgb(max_color_value = 1)) +
